@@ -93,6 +93,19 @@ body {
   background-color: #1ed760;
 }
 
+.admin-login-link {
+  display: inline-block;
+  margin-top: 18px;
+  color: #aaa;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.admin-login-link:hover {
+  color: #1db954;
+  text-decoration: underline;
+}
+
 .app-layout {
   display: flex;
   height: 100vh;
@@ -251,6 +264,70 @@ body {
   padding: 0 30px;
   background-color: rgba(18, 18, 18, 0.6);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile-control {
+  position: relative;
+}
+
+.profile-trigger {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: #242424;
+  color: #fff;
+  cursor: pointer;
+}
+
+.profile-trigger:hover,
+.profile-trigger[aria-expanded="true"] {
+  border-color: #1db954;
+  color: #1db954;
+}
+
+.profile-trigger svg {
+  width: 21px;
+  height: 21px;
+}
+
+.profile-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 190px;
+  padding: 12px;
+  border: 1px solid #383838;
+  border-radius: 8px;
+  background: #202020;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.profile-name {
+  padding: 3px 6px 11px;
+  color: #eee;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.profile-logout {
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #eee;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-logout:hover {
+  background: #303030;
+  color: #1db954;
 }
 
 .header-left {

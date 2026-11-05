@@ -10,6 +10,8 @@ const nowSub = document.getElementById('now-sub');
 const nowArt = document.getElementById('now-art');
 
 const loginOverlay = document.getElementById('login-overlay');
+const profileTrigger = document.getElementById('profile-trigger');
+const profileMenu = document.getElementById('profile-menu');
 
 const viewHome = document.getElementById('view-home');
 const viewCategory = document.getElementById('view-category');
@@ -27,6 +29,7 @@ const folderInput = document.getElementById('folder-input');
 let isPlaying = false;
 let currentFolderKey = 'Default Music';
 let currentSongIndex = 0;
+let activeUsername = 'user';
 
 let folders = {
   'Default Music': {
@@ -50,23 +53,113 @@ function initApp() {
 function handleLogin(e) {
   e.preventDefault();
   const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value.trim();
+  const pass = document.getElementById('login-pass').value;
 
-  if (user === 'user' && pass === 'user') {
-    loginOverlay.style.display = 'none';
-  } else {
-    alert('Invalid ID or Password! Use: user / user');
+  try {
+    const storedUser = findStoredUser(user, pass);
+    if ((user === 'user' && pass === 'user') || storedUser) {
+      activeUsername = storedUser
+        ? getStoredUserField(storedUser, ['username', 'userName', 'name', 'email', 'id']) || user
+        : 'user';
+      document.getElementById('profile-name').textContent = activeUsername;
+      loginOverlay.style.display = 'none';
+    } else {
+      alert('Invalid ID or Password! Use: user / user or an account created by admin.');
+    }
+  } catch (error) {
+    alert('Unable to read saved users from browser storage. ' + error.message);
   }
+}
+
+function normalizeStoredUsers(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (!value || typeof value !== 'object') {
+    return [];
+  }
+  if (Array.isArray(value.users)) {
+    return value.users;
+  }
+  if ('username' in value || 'userName' in value || 'email' in value || 'name' in value) {
+    return [value];
+  }
+  return Object.entries(value).map(([username, record]) => {
+    if (record && typeof record === 'object' && !Array.isArray(record)) {
+      return { username, ...record };
+    }
+    return { username, password: typeof record === 'string' ? record : '' };
+  });
+}
+
+function getStoredUserField(user, fields) {
+  if (!user || typeof user !== 'object') {
+    return '';
+  }
+  for (const field of fields) {
+    const value = user[field];
+    if (typeof value === 'string' || typeof value === 'number') {
+      return String(value);
+    }
+  }
+  return '';
+}
+
+function findStoredUser(username, password) {
+  const keys = ['users', 'registeredUsers', 'sargamLabUsers', 'pulseplayUsers'];
+  for (const key of keys) {
+    const storedValue = localStorage.getItem(key);
+    if (storedValue === null) {
+      continue;
+    }
+
+    const records = normalizeStoredUsers(JSON.parse(storedValue));
+    const match = records.find((record) => {
+      const storedUsername = getStoredUserField(record, ['username', 'userName', 'name', 'email', 'id']);
+      const storedPassword = getStoredUserField(record, ['password', 'pass']);
+      return storedUsername.toLowerCase() === username.toLowerCase() &&
+        storedPassword === password;
+    });
+    if (match) {
+      return match;
+    }
+  }
+  return null;
 }
 
 function handleLogout() {
   player.pause();
   isPlaying = false;
   updatePlayButton();
+  closeProfileMenu();
+  activeUsername = 'user';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
   loginOverlay.style.display = 'flex';
 }
+
+function closeProfileMenu() {
+  profileMenu.classList.add('hidden');
+  profileTrigger.setAttribute('aria-expanded', 'false');
+}
+
+profileTrigger.addEventListener('click', function () {
+  const isExpanded = profileTrigger.getAttribute('aria-expanded') === 'true';
+  profileTrigger.setAttribute('aria-expanded', String(!isExpanded));
+  profileMenu.classList.toggle('hidden', isExpanded);
+});
+
+document.addEventListener('click', function (event) {
+  if (!event.target.closest('.profile-control')) {
+    closeProfileMenu();
+  }
+});
+
+document.addEventListener('keydown', function (event) {
+  if (event.key === 'Escape') {
+    closeProfileMenu();
+  }
+});
 
 if (folderInput) {
   folderInput.addEventListener('change', function (event) {
@@ -128,13 +221,22 @@ function renderFolders() {
       openFolder(key);
     };
 
-    card.innerHTML = `
-      <div class="crate-art">
-        <img src="${folder.cover}" alt="${folder.name}">
-      </div>
-      <div class="crate-title">${folder.name}</div>
-      <div class="crate-sub">${folder.tracks.length} songs</div>
-    `;
+    const art = document.createElement('div');
+    art.className = 'crate-art';
+    const image = document.createElement('img');
+    image.src = folder.cover;
+    image.alt = folder.name;
+    art.appendChild(image);
+
+    const title = document.createElement('div');
+    title.className = 'crate-title';
+    title.textContent = folder.name;
+
+    const subtitle = document.createElement('div');
+    subtitle.className = 'crate-sub';
+    subtitle.textContent = folder.tracks.length + ' songs';
+
+    card.append(art, title, subtitle);
     cratesGrid.appendChild(card);
 
     const navItem = document.createElement('div');
@@ -142,10 +244,12 @@ function renderFolders() {
     navItem.onclick = function () {
       openFolder(key);
     };
-    navItem.innerHTML = `
-      <span>${folder.name}</span>
-      <span class="folder-badge">${folder.tracks.length}</span>
-    `;
+    const navName = document.createElement('span');
+    navName.textContent = folder.name;
+    const badge = document.createElement('span');
+    badge.className = 'folder-badge';
+    badge.textContent = String(folder.tracks.length);
+    navItem.append(navName, badge);
     sidebarFolderList.appendChild(navItem);
   });
 }
@@ -180,7 +284,15 @@ function renderTrackList(tracks) {
   categoryTrackList.innerHTML = '';
 
   if (tracks.length === 0) {
-    categoryTrackList.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">No audio tracks found in this folder.</td></tr>';
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 3;
+    cell.textContent = 'No audio tracks found in this folder.';
+    cell.style.textAlign = 'center';
+    cell.style.padding = '20px';
+    cell.style.color = '#888';
+    row.appendChild(cell);
+    categoryTrackList.appendChild(row);
     return;
   }
 
@@ -190,11 +302,21 @@ function renderTrackList(tracks) {
       tr.classList.add('active-track');
     }
 
-    tr.innerHTML = `
-      <td class="col-num">${index + 1}</td>
-      <td class="col-title"><strong>${song.name}</strong></td>
-      <td class="col-folder">${song.folder}</td>
-    `;
+    const numberCell = document.createElement('td');
+    numberCell.className = 'col-num';
+    numberCell.textContent = String(index + 1);
+
+    const titleCell = document.createElement('td');
+    titleCell.className = 'col-title';
+    const title = document.createElement('strong');
+    title.textContent = song.name;
+    titleCell.appendChild(title);
+
+    const folderCell = document.createElement('td');
+    folderCell.className = 'col-folder';
+    folderCell.textContent = song.folder;
+
+    tr.append(numberCell, titleCell, folderCell);
 
     tr.onclick = function () {
       playSong(index);

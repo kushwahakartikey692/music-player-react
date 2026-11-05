@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PulsePlay - Local Music Player</title>
-  <script type="module" crossorigin src="/assets/index-pPzf1TGq.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CxKXvUIg.css">
+  <title>Sargam Lab - Local Music Player</title>
+  <script type="module" crossorigin src="/assets/index-fYaJ2O8U.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BtApDKW_.css">
 </head>
 <body>
 
   <div id="login-overlay" class="login-overlay">
     <div class="login-card">
-      <h2>PulsePlay</h2>
+      <h2>Sargam Lab</h2>
       <p>Login to listen to your music</p>
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
@@ -24,6 +24,7 @@
         </div>
         <button type="submit" class="btn-login">Login</button>
       </form>
+      <a class="admin-login-link" href="admin.html">Admin login</a>
     </div>
   </div>
 
@@ -31,7 +32,7 @@
 
     <aside class="sidebar">
       <div class="brand">
-        <span class="brand-title">PulsePlay</span>
+        <span class="brand-title">Sargam Lab</span>
       </div>
 
       <div class="sidebar-section">
@@ -66,6 +67,18 @@
             </svg>
           </button>
           <h1 class="view-heading" id="view-heading">All Folders</h1>
+        </div>
+        <div class="profile-control">
+          <button class="profile-trigger" id="profile-trigger" type="button" aria-label="Open user profile" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
+            </svg>
+          </button>
+          <div class="profile-menu hidden" id="profile-menu">
+            <div class="profile-name" id="profile-name">user</div>
+            <button class="profile-logout" type="button" onclick="handleLogout()">Logout</button>
+          </div>
         </div>
       </header>
 

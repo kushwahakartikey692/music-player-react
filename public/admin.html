@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sargam Lab - Admin</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #101010;
+      color: #f5f5f5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px 18px;
+      background:
+        radial-gradient(ellipse at top, rgba(29, 185, 84, 0.12), transparent 55%),
+        #101010;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page-shell {
+      width: min(900px, 100%);
+      margin: 0 auto;
+    }
+
+    .brand {
+      margin: 0;
+      color: #1db954;
+      font-size: 26px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 0 24px;
+    }
+
+    .profile-control {
+      position: relative;
+    }
+
+    .profile-trigger {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #414141;
+      border-radius: 50%;
+      background: #242424;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .profile-trigger:hover,
+    .profile-trigger[aria-expanded="true"] {
+      border-color: #1db954;
+      color: #1db954;
+    }
+
+    .profile-trigger svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    .profile-menu {
+      position: absolute;
+      z-index: 2;
+      top: calc(100% + 10px);
+      right: 0;
+      width: 190px;
+      padding: 12px;
+      border: 1px solid #383838;
+      border-radius: 8px;
+      background: #202020;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .profile-name {
+      padding: 3px 6px 11px;
+      color: #eee;
+      font-size: 14px;
+    }
+
+    .profile-logout {
+      width: 100%;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: #eee;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .profile-logout:hover {
+      background: #303030;
+      color: #1db954;
+    }
+
+    .panel {
+      padding: 28px;
+      border: 1px solid #303030;
+      border-radius: 12px;
+      background: #181818;
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
+    }
+
+    .login-panel {
+      width: min(390px, 100%);
+      margin: 8vh auto 0;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 23px;
+    }
+
+    .intro,
+    .storage-note {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .intro {
+      margin: 0 0 24px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin: 16px 0;
+    }
+
+    label {
+      color: #ccc;
+      font-size: 13px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #414141;
+      border-radius: 6px;
+      outline: none;
+      background: #242424;
+      color: #fff;
+    }
+
+    input:focus {
+      border-color: #1db954;
+    }
+
+    .button {
+      padding: 11px 17px;
+      border: 0;
+      border-radius: 22px;
+      background: #1db954;
+      color: #07140b;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background: #1ed760;
+    }
+
+    .login-panel .button {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #aaa;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      color: #1db954;
+    }
+
+    .error {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: #ff8585;
+      font-size: 13px;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .dashboard-header p {
+      margin: 6px 0 0;
+      color: #aaa;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .user-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 14px;
+    }
+
+    .button.danger {
+      border: 1px solid #743c3c;
+      background: #342020;
+      color: #ffb2b2;
+      white-space: nowrap;
+    }
+
+    .button.danger:hover {
+      background: #4a2626;
+    }
+
+    .add-user-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap: 12px;
+      align-items: end;
+      margin: 0 0 18px;
+      padding: 16px;
+      border: 1px solid #303030;
+      border-radius: 8px;
+      background: #202020;
+    }
+
+    .add-user-form .field {
+      margin: 0;
+    }
+
+    .form-error {
+      grid-column: 1 / -1;
+      min-height: 18px;
+      margin: 0;
+      color: #ff8585;
+      font-size: 13px;
+    }
+
+    .button.secondary {
+      border: 1px solid #424242;
+      background: #242424;
+      color: #eee;
+    }
+
+    .button.secondary:hover {
+      background: #303030;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #303030;
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #303030;
+    }
+
+    th {
+      background: #222;
+      color: #bbb;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    td {
+      color: #eee;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .empty-row,
+    .storage-note {
+      color: #aaa;
+    }
+
+    .storage-note {
+      margin: 16px 0 0;
+      font-size: 12px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 20px 12px;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .dashboard-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .add-user-form {
+        grid-template-columns: 1fr;
+      }
+
+      .form-error {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="page-header">
+      <div class="brand">Sargam Lab</div>
+      <div class="profile-control" id="admin-profile" hidden>
+        <button class="profile-trigger" id="admin-profile-trigger" type="button" aria-label="Open admin profile" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>
+          </svg>
+        </button>
+        <div class="profile-menu" id="admin-profile-menu" hidden>
+          <div class="profile-name">admin</div>
+          <button class="profile-logout" id="admin-logout" type="button">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel login-panel" id="login-panel">
+      <h1>Admin login</h1>
+      <p class="intro">Sign in to view users stored in this browser.</p>
+      <form id="admin-login-form">
+        <div class="field">
+          <label for="admin-username">Username</label>
+          <input id="admin-username" name="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="admin-password">Password</label>
+          <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="button" type="submit">Log in</button>
+        <p class="error" id="login-error" role="alert"></p>
+      </form>
+      <a class="back-link" href="index.html">Back to Sargam Lab</a>
+    </section>
+
+    <section class="panel" id="users-panel" hidden>
+      <div class="dashboard-header">
+        <div>
+          <h1>Users</h1>
+          <p id="user-count">0 users</p>
+        </div>
+        <div class="actions">
+          <button class="button secondary" id="refresh-users" type="button">Refresh</button>
+        </div>
+      </div>
+      <div class="user-actions">
+        <button class="button" id="show-add-user" type="button">Add user</button>
+      </div>
+      <form class="add-user-form" id="add-user-form" hidden>
+        <div class="field">
+          <label for="new-username">Username</label>
+          <input id="new-username" name="username" autocomplete="off" required>
+        </div>
+        <div class="field">
+          <label for="new-password">Password</label>
+          <input id="new-password" name="password" type="password" autocomplete="new-password" required>
+        </div>
+        <button class="button" type="submit">Save user</button>
+        <button class="button secondary" id="cancel-add-user" type="button">Cancel</button>
+        <p class="form-error" id="add-user-error" role="alert"></p>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Username</th>
+              <th scope="col">Role</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body"></tbody>
+        </table>
+      </div>
+      <p class="storage-note" id="storage-status" aria-live="polite"></p>
+      <p class="storage-note">Usernames and passwords are stored in this browser's localStorage. Passwords are not displayed in this list.</p>
+    </section>
+  </main>
+
+  <script>
+    const storageKeys = ['users', 'registeredUsers', 'sargamLabUsers', 'pulseplayUsers'];
+    const loginPanel = document.getElementById('login-panel');
+    const usersPanel = document.getElementById('users-panel');
+    const loginForm = document.getElementById('admin-login-form');
+    const loginError = document.getElementById('login-error');
+    const usersTableBody = document.getElementById('users-table-body');
+    const userCount = document.getElementById('user-count');
+    const storageStatus = document.getElementById('storage-status');
+    const profileControl = document.getElementById('admin-profile');
+    const profileTrigger = document.getElementById('admin-profile-trigger');
+    const profileMenu = document.getElementById('admin-profile-menu');
+    const addUserForm = document.getElementById('add-user-form');
+    const addUserError = document.getElementById('add-user-error');
+
+    function normalizeUsers(value) {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      if (!value || typeof value !== 'object') {
+        return [];
+      }
+      if (Array.isArray(value.users)) {
+        return value.users;
+      }
+      if ('username' in value || 'userName' in value || 'email' in value || 'name' in value) {
+        return [value];
+      }
+      return Object.entries(value).map(([username, record]) => {
+        if (record && typeof record === 'object' && !Array.isArray(record)) {
+          return { username, ...record };
+        }
+        return { username, password: typeof record === 'string' ? record : '' };
+      });
+    }
+
+    function getUserField(user, fields) {
+      if (typeof user === 'string' || typeof user === 'number') {
+        return fields.includes('username') ? String(user) : '';
+      }
+      if (!user || typeof user !== 'object') {
+        return '';
+      }
+      for (const field of fields) {
+        const value = user[field];
+        if (typeof value === 'string' || typeof value === 'number') {
+          return String(value);
+        }
+      }
+      return '';
+    }
+
+    function userIdentity(user) {
+      const username = getUserField(user, ['username', 'userName', 'name', 'email', 'id']);
+      const email = getUserField(user, ['email']);
+      return (username || email).trim().toLowerCase();
+    }
+
+    function loadUsers() {
+      const users = [];
+      const errors = [];
+      const seen = new Set();
+
+      try {
+        for (const key of storageKeys) {
+          const storedValue = localStorage.getItem(key);
+          if (storedValue === null) {
+            continue;
+          }
+
+          try {
+            normalizeUsers(JSON.parse(storedValue)).forEach((record) => {
+              const identity = userIdentity(record);
+              if (!identity || seen.has(identity)) {
+                return;
+              }
+              seen.add(identity);
+              users.push(record);
+            });
+          } catch (error) {
+            errors.push('Could not parse localStorage key "' + key + '".');
+          }
+        }
+      } catch (error) {
+        errors.push('Browser localStorage is unavailable.');
+      }
+
+      return { users, errors };
+    }
+
+    function addCell(row, value) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.appendChild(cell);
+    }
+
+    function renderUsers() {
+      const result = loadUsers();
+      const users = result.users;
+
+      usersTableBody.replaceChildren();
+      if (users.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.className = 'empty-row';
+        cell.textContent = result.errors.length ? 'Users could not be loaded.' : 'No users found in browser storage.';
+        row.appendChild(cell);
+        usersTableBody.appendChild(row);
+      } else {
+        users.forEach((user, index) => {
+          const row = document.createElement('tr');
+          const username = getUserField(user, ['username', 'userName', 'name', 'email', 'id']);
+          const role = getUserField(user, ['role']) || 'User';
+          addCell(row, String(index + 1));
+          addCell(row, username || '—');
+          addCell(row, role);
+
+          const actionCell = document.createElement('td');
+          const removeButton = document.createElement('button');
+          removeButton.className = 'button danger';
+          removeButton.type = 'button';
+          removeButton.textContent = 'Remove';
+          removeButton.dataset.identity = userIdentity(user);
+          removeButton.addEventListener('click', () => removeUser(removeButton.dataset.identity));
+          actionCell.appendChild(removeButton);
+          row.appendChild(actionCell);
+          usersTableBody.appendChild(row);
+        });
+      }
+
+      userCount.textContent = users.length + (users.length === 1 ? ' user' : ' users');
+      storageStatus.textContent = result.errors.join(' ');
+    }
+
+    function addUser(event) {
+      event.preventDefault();
+      addUserError.textContent = '';
+
+      const username = document.getElementById('new-username').value.trim();
+      const password = document.getElementById('new-password').value;
+      if (!username) {
+        addUserError.textContent = 'Enter a username.';
+        return;
+      }
+      if (!password) {
+        addUserError.textContent = 'Enter a password.';
+        return;
+      }
+
+      const result = loadUsers();
+      if (result.errors.length) {
+        addUserError.textContent = result.errors.join(' ');
+        return;
+      }
+
+      const duplicate = result.users.some((user) => {
+        const existingUsername = getUserField(user, ['username', 'userName', 'name', 'email', 'id']);
+        return existingUsername.toLowerCase() === username.toLowerCase();
+      });
+      if (duplicate) {
+        addUserError.textContent = 'A user with that username already exists.';
+        return;
+      }
+
+      try {
+        localStorage.setItem('users', JSON.stringify([
+          ...result.users,
+          { username, password, role: 'User' }
+        ]));
+      } catch (error) {
+        addUserError.textContent = 'Could not save the user to browser storage.';
+        return;
+      }
+
+      addUserForm.reset();
+      addUserForm.hidden = true;
+      renderUsers();
+    }
+
+    function removeFromValue(value, identity) {
+      if (Array.isArray(value)) {
+        return value.filter((user) => userIdentity(user) !== identity);
+      }
+      if (!value || typeof value !== 'object') {
+        return value;
+      }
+      if (Array.isArray(value.users)) {
+        return { ...value, users: value.users.filter((user) => userIdentity(user) !== identity) };
+      }
+      if ('username' in value || 'userName' in value || 'email' in value || 'name' in value) {
+        return userIdentity(value) === identity ? null : value;
+      }
+
+      const filtered = {};
+      Object.entries(value).forEach(([username, record]) => {
+        const normalized = normalizeUsers({ [username]: record })[0];
+        if (!normalized || userIdentity(normalized) !== identity) {
+          filtered[username] = record;
+        }
+      });
+      return filtered;
+    }
+
+    function removeUser(identity) {
+      if (!identity || !window.confirm('Remove this user from browser storage?')) {
+        return;
+      }
+
+      try {
+        const errors = [];
+        for (const key of storageKeys) {
+          const storedValue = localStorage.getItem(key);
+          if (storedValue === null) {
+            continue;
+          }
+          try {
+            const updated = removeFromValue(JSON.parse(storedValue), identity);
+            if (updated === null) {
+              localStorage.removeItem(key);
+            } else {
+              localStorage.setItem(key, JSON.stringify(updated));
+            }
+          } catch (error) {
+            errors.push('Could not update localStorage key "' + key + '".');
+          }
+        }
+        renderUsers();
+        if (errors.length) {
+          storageStatus.textContent = [storageStatus.textContent, errors.join(' ')].filter(Boolean).join(' ');
+        }
+      } catch (error) {
+        storageStatus.textContent = 'Could not update browser storage.';
+      }
+    }
+
+    function closeProfileMenu() {
+      profileMenu.hidden = true;
+      profileTrigger.setAttribute('aria-expanded', 'false');
+    }
+
+    loginForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const username = document.getElementById('admin-username').value.trim();
+      const password = document.getElementById('admin-password').value;
+
+      if (username === 'admin' && password === 'admin') {
+        loginError.textContent = '';
+        loginPanel.hidden = true;
+        usersPanel.hidden = false;
+        profileControl.hidden = false;
+        renderUsers();
+      } else {
+        loginError.textContent = 'Invalid username or password.';
+      }
+    });
+
+    document.getElementById('refresh-users').addEventListener('click', renderUsers);
+    document.getElementById('admin-logout').addEventListener('click', () => {
+      closeProfileMenu();
+      profileControl.hidden = true;
+      usersPanel.hidden = true;
+      loginPanel.hidden = false;
+      loginForm.reset();
+      loginError.textContent = '';
+    });
+
+    profileTrigger.addEventListener('click', () => {
+      profileMenu.hidden = !profileMenu.hidden;
+      profileTrigger.setAttribute('aria-expanded', String(!profileMenu.hidden));
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('#admin-profile')) {
+        closeProfileMenu();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeProfileMenu();
+      }
+    });
+
+    document.getElementById('show-add-user').addEventListener('click', () => {
+      addUserForm.hidden = false;
+      addUserError.textContent = '';
+      document.getElementById('new-username').focus();
+    });
+    document.getElementById('cancel-add-user').addEventListener('click', () => {
+      addUserForm.reset();
+      addUserForm.hidden = true;
+      addUserError.textContent = '';
+    });
+    addUserForm.addEventListener('submit', addUser);
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === null || storageKeys.includes(event.key)) {
+        renderUsers();
+      }
+    });
+  </script>
+</body>
+</html>
