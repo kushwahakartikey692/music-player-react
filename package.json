@@ -1,5 +1,5 @@
 {
-  "name": "react-port",
+  "name": "sargam-lab",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -7,6 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.9",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "vite": "^8.3.6"

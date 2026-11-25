@@ -216,6 +216,39 @@
       color: #aaa;
     }
 
+    .approval-section {
+      margin: 0 0 24px;
+    }
+
+    .approval-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .approval-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .approval-header p {
+      margin: 0;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    .request-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .request-actions .button {
+      padding: 7px 12px;
+      font-size: 12px;
+    }
+
     .actions {
       display: flex;
       gap: 10px;
@@ -393,6 +426,24 @@
           <button class="button secondary" id="refresh-users" type="button">Refresh</button>
         </div>
       </div>
+      <section class="approval-section" aria-labelledby="signup-requests-heading">
+        <div class="approval-header">
+          <h2 id="signup-requests-heading">Signup requests</h2>
+          <p id="pending-request-count">0 pending</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Username</th>
+                <th scope="col">Requested</th>
+                <th scope="col">Review</th>
+              </tr>
+            </thead>
+            <tbody id="pending-requests-body"></tbody>
+          </table>
+        </div>
+      </section>
       <div class="user-actions">
         <button class="button" id="show-add-user" type="button">Add user</button>
       </div>
@@ -429,11 +480,14 @@
 
   <script>
     const storageKeys = ['users', 'registeredUsers', 'sargamLabUsers', 'pulseplayUsers'];
+    const signupRequestsKey = 'sargamLabSignupRequests';
     const loginPanel = document.getElementById('login-panel');
     const usersPanel = document.getElementById('users-panel');
     const loginForm = document.getElementById('admin-login-form');
     const loginError = document.getElementById('login-error');
     const usersTableBody = document.getElementById('users-table-body');
+    const pendingRequestsBody = document.getElementById('pending-requests-body');
+    const pendingRequestCount = document.getElementById('pending-request-count');
     const userCount = document.getElementById('user-count');
     const storageStatus = document.getElementById('storage-status');
     const profileControl = document.getElementById('admin-profile');
@@ -517,6 +571,19 @@
       return { users, errors };
     }
 
+    function loadSignupRequests() {
+      try {
+        const storedValue = localStorage.getItem(signupRequestsKey);
+        const requests = storedValue === null ? [] : JSON.parse(storedValue);
+        if (!Array.isArray(requests)) {
+          return { requests: [], error: 'Signup request storage is not in a valid format.' };
+        }
+        return { requests, error: '' };
+      } catch (error) {
+        return { requests: [], error: 'Could not load signup requests from browser storage.' };
+      }
+    }
+
     function addCell(row, value) {
       const cell = document.createElement('td');
       cell.textContent = value;
@@ -560,6 +627,131 @@
 
       userCount.textContent = users.length + (users.length === 1 ? ' user' : ' users');
       storageStatus.textContent = result.errors.join(' ');
+      renderSignupRequests();
+    }
+
+    function renderSignupRequests() {
+      const result = loadSignupRequests();
+      const requests = result.requests.filter((request) =>
+        request && typeof request.username === 'string' && typeof request.password === 'string'
+      );
+      pendingRequestsBody.replaceChildren();
+      pendingRequestCount.textContent = requests.length +
+        (requests.length === 1 ? ' pending request' : ' pending requests');
+
+      if (result.error) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 3;
+        cell.className = 'empty-row';
+        cell.textContent = result.error;
+        row.appendChild(cell);
+        pendingRequestsBody.appendChild(row);
+        storageStatus.textContent = [storageStatus.textContent, result.error].filter(Boolean).join(' ');
+        return;
+      }
+
+      if (requests.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 3;
+        cell.className = 'empty-row';
+        cell.textContent = 'No signup requests are waiting for approval.';
+        row.appendChild(cell);
+        pendingRequestsBody.appendChild(row);
+        return;
+      }
+
+      requests.forEach((request) => {
+        const row = document.createElement('tr');
+        addCell(row, request.username);
+        const requestedAt = request.requestedAt
+          ? new Date(request.requestedAt).toLocaleString()
+          : '—';
+        addCell(row, requestedAt);
+
+        const actionsCell = document.createElement('td');
+        const actions = document.createElement('div');
+        actions.className = 'request-actions';
+        const approveButton = document.createElement('button');
+        approveButton.className = 'button';
+        approveButton.type = 'button';
+        approveButton.textContent = 'Approve';
+        approveButton.addEventListener('click', () => approveSignupRequest(request.username));
+        const rejectButton = document.createElement('button');
+        rejectButton.className = 'button danger';
+        rejectButton.type = 'button';
+        rejectButton.textContent = 'Reject';
+        rejectButton.addEventListener('click', () => rejectSignupRequest(request.username));
+        actions.append(approveButton, rejectButton);
+        actionsCell.appendChild(actions);
+        row.appendChild(actionsCell);
+        pendingRequestsBody.appendChild(row);
+      });
+    }
+
+    function approveSignupRequest(username) {
+      const requestResult = loadSignupRequests();
+      if (requestResult.error) {
+        storageStatus.textContent = requestResult.error;
+        return;
+      }
+      const request = requestResult.requests.find((item) =>
+        item && typeof item.username === 'string' &&
+        item.username.toLowerCase() === username.toLowerCase()
+      );
+      if (!request || typeof request.password !== 'string') {
+        storageStatus.textContent = 'This signup request is no longer available.';
+        renderSignupRequests();
+        return;
+      }
+
+      const userResult = loadUsers();
+      if (userResult.errors.length) {
+        storageStatus.textContent = userResult.errors.join(' ');
+        return;
+      }
+      const alreadyExists = userResult.users.some((user) =>
+        getUserField(user, ['username', 'userName', 'name', 'email', 'id']).toLowerCase() ===
+        username.toLowerCase()
+      );
+      if (alreadyExists) {
+        storageStatus.textContent = 'That username already belongs to an approved account.';
+        return;
+      }
+
+      try {
+        localStorage.setItem('users', JSON.stringify([
+          ...userResult.users,
+          { username: request.username, password: request.password, role: 'User' }
+        ]));
+        const remainingRequests = requestResult.requests.filter((item) =>
+          !item || typeof item.username !== 'string' ||
+          item.username.toLowerCase() !== username.toLowerCase()
+        );
+        localStorage.setItem(signupRequestsKey, JSON.stringify(remainingRequests));
+        renderUsers();
+      } catch (error) {
+        storageStatus.textContent = 'Could not approve this signup request in browser storage.';
+      }
+    }
+
+    function rejectSignupRequest(username) {
+      const requestResult = loadSignupRequests();
+      if (requestResult.error) {
+        storageStatus.textContent = requestResult.error;
+        return;
+      }
+      const remainingRequests = requestResult.requests.filter((item) =>
+        !item || typeof item.username !== 'string' ||
+        item.username.toLowerCase() !== username.toLowerCase()
+      );
+      try {
+        localStorage.setItem(signupRequestsKey, JSON.stringify(remainingRequests));
+        renderSignupRequests();
+      } catch (error) {
+        storageStatus.textContent = 'Could not reject this signup request in browser storage.';
+      }
     }
 
     function addUser(event) {
@@ -722,7 +914,7 @@
     addUserForm.addEventListener('submit', addUser);
 
     window.addEventListener('storage', (event) => {
-      if (event.key === null || storageKeys.includes(event.key)) {
+      if (event.key === null || storageKeys.includes(event.key) || event.key === signupRequestsKey) {
         renderUsers();
       }
     });
